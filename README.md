@@ -1,31 +1,26 @@
 # inference_supergrid
 
-Experiments with LLM serving on a Flower SuperGrid. The first example,
-[`ollama/`](ollama/), is a minimal app that runs an LLM across a Flower "SuperGrid": one SuperLink
-plus 2 SuperNodes. The ServerApp sends the same prompt to both SuperNodes;
-each SuperNode runs the prompt through a locally-served Ollama model and
-sends the response back. Nothing but prompt/response text ever crosses the
-grid — no weights, no data.
+Experiments with LLM inference on a [Flower](https://flower.ai) SuperGrid: one
+SuperLink plus N SuperNodes. A `ServerApp` sends the same prompt to every
+SuperNode; each SuperNode runs it through a **locally-served** LLM backend and
+sends the response back. Only prompt/response text crosses the grid — no
+weights, no data.
 
-It uses Flower's SuperLink/SuperNode deployment API (tested with
-`flwr==1.23.0`). For a single-machine, step-by-step walkthrough with
-experiments and troubleshooting, see [ollama/TESTING.md](ollama/TESTING.md).
+Each backend lives in its own folder with its own README, dependencies and
+config. They share the same grid and message protocol.
 
-## Repository layout
+| Folder | Backend | Docs |
+|---|---|---|
+| [ollama/](ollama/) | [Ollama](https://ollama.com) | [README](ollama/README.md), [TESTING](ollama/TESTING.md) |
+| [vllm/](vllm/) | [vLLM](https://docs.vllm.ai) (OpenAI-compatible server) | [README](vllm/README.md) |
 
-| Path | Purpose |
-|---|---|
-| [ollama/supergrid_llm/server_app.py](ollama/supergrid_llm/server_app.py) | `ServerApp`: fans the prompt out to every SuperNode and prints replies |
-| [ollama/supergrid_llm/client_app.py](ollama/supergrid_llm/client_app.py) | `ClientApp`: `@app.query()` handler that calls local Ollama |
-| [ollama/pyproject.toml](ollama/pyproject.toml) | Dependencies, app components, run config and the `supergrid` federation |
-| [ollama/TESTING.md](ollama/TESTING.md) | Local test guide |
-| [vllm/](vllm/) | Same app template, backed by a local vLLM server (see [vllm/README.md](vllm/README.md)) |
+Tested with `flwr==1.23.0` (SuperLink/SuperNode deployment API).
 
 ## Architecture
 
 ```mermaid
 flowchart TB
-    CLI["flwr run . supergrid<br/>(this app: supergrid_llm)"]
+    CLI["flwr run . supergrid"]
 
     subgraph SuperLink["SuperLink — insecure :9092 (Fleet API) / :9093 (Control API)"]
         SA["flwr-serverapp<br/>server_app.py — uses Grid to reach every SuperNode"]
@@ -33,14 +28,14 @@ flowchart TB
 
     subgraph Node1["SuperNode 1"]
         CA1["flwr-clientapp<br/>client_app.py — @app.query()"]
-        O1["Ollama<br/>llama3.2"]
-        CA1 <--> O1
+        B1["Local LLM backend<br/>(Ollama / vLLM / ...)"]
+        CA1 <--> B1
     end
 
     subgraph Node2["SuperNode 2"]
         CA2["flwr-clientapp<br/>client_app.py — @app.query()"]
-        O2["Ollama<br/>llama3.2"]
-        CA2 <--> O2
+        B2["Local LLM backend<br/>(Ollama / vLLM / ...)"]
+        CA2 <--> B2
     end
 
     CLI -- "submit run" --> SuperLink
@@ -49,7 +44,8 @@ flowchart TB
 ```
 
 Only the prompt goes out and the generated text comes back over the grid —
-each SuperNode's Ollama model, and any local data, stays on that node.
+each SuperNode's model, and any local data, stays on that node. The only
+backend-specific code is `client_app.py`; `server_app.py` is identical.
 
 ## Message flow
 
@@ -61,56 +57,43 @@ sequenceDiagram
     participant SA as ServerApp (Grid)
     participant N1 as SuperNode 1 (ClientApp)
     participant N2 as SuperNode 2 (ClientApp)
-    participant O1 as Ollama (node 1)
-    participant O2 as Ollama (node 2)
+    participant B1 as LLM backend (node 1)
+    participant B2 as LLM backend (node 2)
 
     You->>CLI: flwr run . supergrid --stream
-    CLI->>SL: submit supergrid-llm app
+    CLI->>SL: submit app
     SL->>SA: start ServerApp process
     SA->>SL: grid.get_node_ids()
     SL-->>SA: [node1_id, node2_id]
 
     par SuperNode 1
         SA->>N1: Message(type=QUERY, prompt)
-        N1->>O1: ollama.generate(model, prompt)
-        O1-->>N1: generated text
+        N1->>B1: generate(model, prompt)
+        B1-->>N1: generated text
         N1-->>SA: Message(reply, response)
     and SuperNode 2
         SA->>N2: Message(type=QUERY, prompt)
-        N2->>O2: ollama.generate(model, prompt)
-        O2-->>N2: generated text
+        N2->>B2: generate(model, prompt)
+        B2-->>N2: generated text
         N2-->>SA: Message(reply, response)
     end
 
     SA->>SA: print each node's response
 ```
 
-## Prerequisites
+## Running the grid
 
-On **every** machine that will run a SuperNode:
+Backend setup (installing the model server, pulling models, `pip install -e .`)
+is described in each folder's README. The grid itself is started the same way
+for every backend. From the backend folder, in separate terminals:
 
-```bash
-ollama pull llama3.2:latest
-ollama serve   # if not already running as a service
-```
-
-From the app directory:
-
-```bash
-cd ollama
-pip install -e .
-```
-
-## Run it
-
-1. Start the SuperLink (once, on whichever machine is the hub):
+1. **SuperLink** (once, on the hub machine):
 
    ```bash
    flower-superlink --insecure
    ```
 
-2. Start SuperNode 1 (point `--superlink` at the SuperLink's Fleet API
-   address, port `9092` by default):
+2. **SuperNode 1** (point `--superlink` at the SuperLink's Fleet API, port `9092`):
 
    ```bash
    flower-supernode --insecure \
@@ -119,8 +102,8 @@ pip install -e .
      --node-config "partition-id=0"
    ```
 
-3. Start SuperNode 2, on a second machine or a second terminal on the same
-   machine. Each SuperNode needs its own `--clientappio-api-address`:
+3. **SuperNode 2**, on another machine or terminal. Each SuperNode needs its
+   own `--clientappio-api-address`:
 
    ```bash
    flower-supernode --insecure \
@@ -129,25 +112,17 @@ pip install -e .
      --node-config "partition-id=1"
    ```
 
-4. From `ollama/`, run the app against the `supergrid` federation
-   defined in `pyproject.toml`:
+4. **Run the app** against the `supergrid` federation defined in the folder's
+   `pyproject.toml`:
 
    ```bash
    flwr run . supergrid --stream
    ```
 
-   (On very new `flwr` releases the federation address may instead need to
-   be defined in `~/.flwr/config.toml` — check `flwr run --help` if the
-   command above is rejected.)
+   (On very new `flwr` releases the federation address may instead need to be
+   defined in `~/.flwr/config.toml` — check `flwr run --help`.)
 
-You should see the ServerApp print the connected SuperNode IDs, followed by
-each node's generated response to the shared prompt.
-
-## Customize
-
-Edit `[tool.flwr.app.config]` in `pyproject.toml`, or override at the
-command line, e.g.:
-
-```bash
-flwr run . supergrid --run-config 'prompt="Explain SuperGrid in one line" model="llama3.2:latest"'
-```
+The ServerApp prints the connected SuperNode IDs, followed by each node's
+response. Config such as `prompt` and `model` lives in
+`[tool.flwr.app.config]` in each `pyproject.toml` and can be overridden with
+`--run-config`; the available keys are listed in each folder's README.

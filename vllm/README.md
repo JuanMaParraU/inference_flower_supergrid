@@ -1,7 +1,8 @@
 # vllm
 
-Same SuperGrid pattern as [`../ollama`](../ollama), but each SuperNode calls a
-local [vLLM](https://docs.vllm.ai) OpenAI-compatible server instead of Ollama.
+SuperGrid LLM inference where each SuperNode calls a
+local [vLLM](https://docs.vllm.ai) OpenAI-compatible server. See the
+[top-level README](../README.md) for the architecture and message flow.
 
 ## Setup (on every SuperNode machine)
 
@@ -13,8 +14,8 @@ pip install -e .            # from this directory
 
 ## Run
 
-Start the SuperLink and SuperNodes exactly as in
-[`../ollama/TESTING.md`](../ollama/TESTING.md), then from this directory:
+Start the SuperLink and SuperNodes as described in the
+[top-level README](../README.md#running-the-grid), then from this directory:
 
 ```bash
 flwr run . supergrid --stream
@@ -26,4 +27,13 @@ Override config at runtime, e.g.:
 flwr run . supergrid --stream --run-config 'prompt="Hello" max-tokens=64'
 ```
 
-The `model` config must match the model passed to `vllm serve`.
+## Config
+
+Set in `[tool.flwr.app.config]` in [pyproject.toml](pyproject.toml):
+
+| Key | Default | Meaning |
+|---|---|---|
+| `model` | `Qwen/Qwen2.5-0.5B-Instruct` | Model name; must match what `vllm serve` loaded |
+| `vllm-url` | `http://127.0.0.1:8000/v1` | Base URL of the node-local vLLM server |
+| `max-tokens` | `128` | Max tokens generated per reply |
+| `prompt` | `In one sentence, what is federated learning?` | Prompt sent to all nodes |
