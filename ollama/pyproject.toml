@@ -16,7 +16,7 @@ dependencies = [
 packages = ["supergrid_llm"]
 
 [tool.flwr.app]
-publisher = "kubeflower"
+publisher = "juanmarceloparra"
 
 [tool.flwr.app.components]
 serverapp = "supergrid_llm.server_app:app"
