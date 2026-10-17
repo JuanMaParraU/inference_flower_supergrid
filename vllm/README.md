@@ -4,18 +4,33 @@ SuperGrid LLM inference where each SuperNode calls a
 local [vLLM](https://docs.vllm.ai) OpenAI-compatible server. See the
 [top-level README](../README.md) for the architecture and message flow.
 
-## Setup (on every SuperNode machine)
+## Setup
+
+Complete the [install and grid quick test](../README.md#install) first. Then, on
+every SuperNode machine:
 
 ```bash
-pip install vllm            # needs a supported GPU/CPU build, see vLLM docs
-vllm serve Qwen/Qwen2.5-0.5B-Instruct --port 8000
-pip install -e .            # from this directory
+uv pip install vllm         # Linux (GPU/CPU wheels)
+uv pip install -e .         # install this app; run from this directory
 ```
+
+Then keep a vLLM server running on each SuperNode machine (separate terminal):
+
+```bash
+vllm serve Qwen/Qwen2.5-0.5B-Instruct --port 8000
+```
+
+> **macOS (Apple Silicon):** upstream vLLM has no macOS wheels, so don't build it
+> from source. Use [vLLM-Metal](https://docs.vllm.ai/en/latest/getting_started/installation/gpu/),
+> the Apple Silicon (MLX/Metal) backend, following its install steps. It serves
+> MLX models, e.g. `mlx-community/Qwen2.5-0.5B-Instruct-4bit`; set `model` in
+> [pyproject.toml](pyproject.toml) to match what you serve.
 
 ## Run
 
-Start the SuperLink and SuperNodes as described in the
-[top-level README](../README.md#running-the-grid), then from this directory:
+With the SuperLink and SuperNodes running (see the
+[quick test](../README.md#quick-test-join-nodes-to-the-grid)) and `vllm serve`
+up on each SuperNode, from this directory:
 
 ```bash
 flwr run . supergrid --stream

@@ -11,7 +11,7 @@ config. They share the same grid and message protocol.
 
 | Folder | Backend | Docs |
 |---|---|---|
-| [ollama/](ollama/) | [Ollama](https://ollama.com) | [README](ollama/README.md), [TESTING](ollama/TESTING.md) |
+| [ollama/](ollama/) | [Ollama](https://ollama.com) | [README](ollama/README.md) |
 | [vllm/](vllm/) | [vLLM](https://docs.vllm.ai) (OpenAI-compatible server) | [README](vllm/README.md) |
 
 Tested with `flwr==1.23.0` (SuperLink/SuperNode deployment API).
@@ -81,19 +81,35 @@ sequenceDiagram
     SA->>SA: print each node's response
 ```
 
-## Running the grid
+## Install
 
-Backend setup (installing the model server, pulling models, `pip install -e .`)
-is described in each folder's README. The grid itself is started the same way
-for every backend. From the backend folder, in separate terminals:
+Requires Python 3.10-3.12 and [`uv`](https://docs.astral.sh/uv/) (`brew install uv`).
+Create one virtual environment at the repo root, **not** inside `ollama/` or
+`vllm/`: `flwr run` bundles the app folder and uploads it, so a venv inside it
+bloats the bundle.
 
-1. **SuperLink** (once, on the hub machine):
+```bash
+uv venv --python 3.12 .venv
+source .venv/bin/activate
+uv pip install "flwr>=1.13,<1.24"     # provides flower-superlink, flower-supernode, flwr
+```
+
+Each backend then installs its own app and model server on the SuperNode
+machines; see [ollama/README.md](ollama/README.md) and [vllm/README.md](vllm/README.md).
+
+## Quick test: join nodes to the grid
+
+This checks the grid itself (SuperLink + 2 SuperNodes) before any LLM backend
+is involved. Use one terminal per command, each with the venv activated.
+
+1. **SuperLink** (once, on the hub machine). Fleet API on `:9092`, Control API on `:9093`:
 
    ```bash
    flower-superlink --insecure
    ```
 
-2. **SuperNode 1** (point `--superlink` at the SuperLink's Fleet API, port `9092`):
+2. **SuperNode 1**. Point `--superlink` at the SuperLink's Fleet API
+   (`127.0.0.1` if everything runs on one machine):
 
    ```bash
    flower-supernode --insecure \
@@ -102,8 +118,8 @@ for every backend. From the backend folder, in separate terminals:
      --node-config "partition-id=0"
    ```
 
-3. **SuperNode 2**, on another machine or terminal. Each SuperNode needs its
-   own `--clientappio-api-address`:
+3. **SuperNode 2**, on another machine or terminal. Each SuperNode on the same
+   machine needs its own `--clientappio-api-address`:
 
    ```bash
    flower-supernode --insecure \
@@ -112,17 +128,38 @@ for every backend. From the backend folder, in separate terminals:
      --node-config "partition-id=1"
    ```
 
-4. **Run the app** against the `supergrid` federation defined in the folder's
-   `pyproject.toml`:
+4. **Check the nodes joined.** Both SuperNodes should log that they connected
+   to the SuperLink. You can also list them from the SuperLink's federation:
 
    ```bash
-   flwr run . supergrid --stream
+   flwr supernode list ollama supergrid   # or: flwr supernode list vllm supergrid
    ```
 
-   (On very new `flwr` releases the federation address may instead need to be
-   defined in `~/.flwr/config.toml` — check `flwr run --help`.)
+If a node doesn't show up, check the `--superlink` address, that port `9092`
+is reachable, and that each SuperNode has a unique `--clientappio-api-address`.
+The grid stays up for both examples below; you don't need to restart it to
+switch backend.
+
+## Run an example
+
+With the grid running, follow the backend README, which covers installing the
+model server and the app on each SuperNode, then runs the app from its folder:
+
+| Backend | Setup and run |
+|---|---|
+| Ollama | [ollama/README.md](ollama/README.md) |
+| vLLM | [vllm/README.md](vllm/README.md) |
+
+In both cases the final step is, from the backend folder:
+
+```bash
+flwr run . supergrid --stream
+```
 
 The ServerApp prints the connected SuperNode IDs, followed by each node's
-response. Config such as `prompt` and `model` lives in
-`[tool.flwr.app.config]` in each `pyproject.toml` and can be overridden with
-`--run-config`; the available keys are listed in each folder's README.
+response. The `supergrid` federation (SuperLink Control API address) is defined
+in each folder's `pyproject.toml`. Config such as `prompt` and `model` lives in
+`[tool.flwr.app.config]` there and can be overridden with `--run-config`; the
+keys are listed in each folder's README. On very new `flwr` releases the
+federation address may instead need to be defined in `~/.flwr/config.toml`;
+check `flwr run --help`.

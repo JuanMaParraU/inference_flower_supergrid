@@ -2,9 +2,7 @@
 
 SuperGrid LLM inference where each SuperNode calls a locally-served
 [Ollama](https://ollama.com) model. See the [top-level README](../README.md)
-for the architecture, message flow and how to start the grid, and
-[TESTING.md](TESTING.md) for a single-machine walkthrough with experiments and
-troubleshooting.
+for the architecture, message flow, install and the grid quick test.
 
 | File | Purpose |
 |---|---|
@@ -14,27 +12,31 @@ troubleshooting.
 
 ## Setup
 
-On **every** machine that will run a SuperNode:
+Complete the [install and grid quick test](../README.md#install) first. Then,
+on **every** machine that will run a SuperNode:
 
 ```bash
 ollama pull llama3.2:latest
 ollama serve   # if not already running as a service
 ```
 
-Then, from this directory:
+Install this app into the repo-root venv (from this directory):
 
 ```bash
-pip install -e .
+uv pip install -e .
 ```
 
 ## Run
 
-Start the SuperLink and SuperNodes as described in the
-[top-level README](../README.md#running-the-grid), then:
+With the SuperLink and SuperNodes running, from this directory:
 
 ```bash
 flwr run . supergrid --stream
 ```
+
+Expected: the connected SuperNode IDs, then one generated response per node.
+If a node fails (for example the model isn't pulled), the ServerApp prints
+`Node <id> failed: ...`.
 
 ## Config
 
