@@ -50,5 +50,5 @@ Set in `[tool.flwr.app.config]` in [pyproject.toml](pyproject.toml):
 Override at runtime:
 
 ```bash
-flwr run . supergrid --run-config 'prompt="Explain SuperGrid in one line" model="llama3.2:latest"'
+flwr run . supergrid --run-config 'prompt="{YOUR PROMPT}"'
 ```

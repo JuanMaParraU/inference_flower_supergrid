@@ -39,7 +39,7 @@ flwr run . supergrid --stream
 Override config at runtime, e.g.:
 
 ```bash
-flwr run . supergrid --stream --run-config 'prompt="Hello" max-tokens=64'
+flwr run . supergrid --stream --run-config 'prompt="{YOUR PROMPT}" max-tokens=64'
 ```
 
 ## Config
