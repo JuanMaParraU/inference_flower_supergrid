@@ -142,8 +142,7 @@ switch backend.
 
 ## Understanding `pyproject.toml`
 
-Each backend folder has a `pyproject.toml` that is both the Python package
-definition and the Flower app definition. The Flower parts live under
+Flower uses the .toml file as the main template and workflow definition. Each example backend (ollama/vllm) folder has a `pyproject.toml` that is both the Python package definition and the Flower app definition. The Flower parts live under
 `[tool.flwr.*]`:
 
 ```toml
@@ -169,21 +168,6 @@ insecure = true
 | `[tool.flwr.app.config]` | Run config: prompt, model and any backend setting. Read in code as `context.run_config["prompt"]`. Override per run with `--run-config 'prompt="..."'`. | Both apps. |
 | `[tool.flwr.federations.<name>]` | The SuperLink's **Control API** address that `flwr run . <name>` submits to (`9093` by default), and `insecure = true` for no TLS. | The `flwr run` CLI only. |
 | `[project]` / `dependencies` | Python package name and dependencies (`flwr`, plus `ollama` or `openai`). | `uv pip install -e .` |
-
-Not everything lives in the file. Where each setting is defined:
-
-| Setting | Where |
-|---|---|
-| Prompt, model name, backend URL, max tokens | `[tool.flwr.app.config]` in `pyproject.toml` (or `--run-config`) |
-| SuperLink address for `flwr run` (`:9093`) | `[tool.flwr.federations.supergrid]` in `pyproject.toml` |
-| SuperLink Fleet API (`:9092`) that SuperNodes connect to | `--superlink` flag on `flower-supernode`; the SuperLink listens there by default |
-| SuperNode `ClientAppIO` port (`:9094`, `:9095`, ...) | `--clientappio-api-address` flag on `flower-supernode`, unique per node |
-| Per-node values such as `partition-id` | `--node-config` flag on `flower-supernode`, read as `context.node_config` |
-| Backend server (Ollama `:11434`, vLLM `:8000`) | The backend itself; vLLM's URL is also in the run config as `vllm-url` |
-
-Changing `[tool.flwr.app.config]` takes effect on the next `flwr run`.
-Changing code or `[tool.flwr.app.components]` requires reinstalling or
-restarting the SuperNodes, because they run the installed package.
 
 Each folder's README lists the exact keys, defaults and backend-specific
 settings for that case: [ollama/README.md](ollama/README.md#config) and
