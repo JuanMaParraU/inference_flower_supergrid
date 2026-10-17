@@ -1,4 +1,4 @@
-# inference_supergrid
+# Distributed AI Inference using Flower Supergrid
 
 Experiments with LLM inference on a [Flower](https://flower.ai) SuperGrid: one
 SuperLink plus N SuperNodes. A `ServerApp` sends the same prompt to every
