@@ -35,7 +35,7 @@ ollama --version
 Run from the example directory:
 
 ```bash
-cd supergrid_llm
+cd ollama
 
 # Fresh venv with a pinned Python (Flower 1.23 works well on 3.10–3.12)
 uv venv --python 3.11 .venv
@@ -81,7 +81,7 @@ The model name must match `model` in `[tool.flwr.app.config]` in
 ## 4. Start the grid (4 terminals)
 
 Activate the venv (`source .venv/bin/activate`) in each one, from
-`supergrid_llm/`.
+`ollama/`.
 
 **Terminal 1 — SuperLink**
 

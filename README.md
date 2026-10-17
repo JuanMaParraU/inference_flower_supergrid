@@ -1,7 +1,7 @@
 # inference_supergrid
 
 Experiments with LLM serving on a Flower SuperGrid. The first example,
-[`supergrid_llm/`](supergrid_llm/), is a minimal app that runs an LLM across a Flower "SuperGrid": one SuperLink
+[`ollama/`](ollama/), is a minimal app that runs an LLM across a Flower "SuperGrid": one SuperLink
 plus 2 SuperNodes. The ServerApp sends the same prompt to both SuperNodes;
 each SuperNode runs the prompt through a locally-served Ollama model and
 sends the response back. Nothing but prompt/response text ever crosses the
@@ -9,16 +9,17 @@ grid — no weights, no data.
 
 It uses Flower's SuperLink/SuperNode deployment API (tested with
 `flwr==1.23.0`). For a single-machine, step-by-step walkthrough with
-experiments and troubleshooting, see [supergrid_llm/TESTING.md](supergrid_llm/TESTING.md).
+experiments and troubleshooting, see [ollama/TESTING.md](ollama/TESTING.md).
 
 ## Repository layout
 
 | Path | Purpose |
 |---|---|
-| [supergrid_llm/supergrid_llm/server_app.py](supergrid_llm/supergrid_llm/server_app.py) | `ServerApp`: fans the prompt out to every SuperNode and prints replies |
-| [supergrid_llm/supergrid_llm/client_app.py](supergrid_llm/supergrid_llm/client_app.py) | `ClientApp`: `@app.query()` handler that calls local Ollama |
-| [supergrid_llm/pyproject.toml](supergrid_llm/pyproject.toml) | Dependencies, app components, run config and the `supergrid` federation |
-| [supergrid_llm/TESTING.md](supergrid_llm/TESTING.md) | Local test guide |
+| [ollama/supergrid_llm/server_app.py](ollama/supergrid_llm/server_app.py) | `ServerApp`: fans the prompt out to every SuperNode and prints replies |
+| [ollama/supergrid_llm/client_app.py](ollama/supergrid_llm/client_app.py) | `ClientApp`: `@app.query()` handler that calls local Ollama |
+| [ollama/pyproject.toml](ollama/pyproject.toml) | Dependencies, app components, run config and the `supergrid` federation |
+| [ollama/TESTING.md](ollama/TESTING.md) | Local test guide |
+| [vllm/](vllm/) | Same app template, backed by a local vLLM server (see [vllm/README.md](vllm/README.md)) |
 
 ## Architecture
 
@@ -96,7 +97,7 @@ ollama serve   # if not already running as a service
 From the app directory:
 
 ```bash
-cd supergrid_llm
+cd ollama
 pip install -e .
 ```
 
@@ -128,7 +129,7 @@ pip install -e .
      --node-config "partition-id=1"
    ```
 
-4. From `supergrid_llm/`, run the app against the `supergrid` federation
+4. From `ollama/`, run the app against the `supergrid` federation
    defined in `pyproject.toml`:
 
    ```bash
