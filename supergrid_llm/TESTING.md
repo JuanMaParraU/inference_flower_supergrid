@@ -8,7 +8,7 @@ Everything is done with [`uv`](https://docs.astral.sh/uv/).
 
 A `ServerApp` sends the same prompt to every SuperNode on the grid. Each
 SuperNode's `ClientApp` calls its local Ollama model and returns the text.
-Only prompt/response text crosses the grid. See [README.md](README.md) for the
+Only prompt/response text crosses the grid. See [the top-level README](../README.md) for the
 architecture and sequence diagrams.
 
 | Component | Command | Port | Code |
@@ -35,7 +35,7 @@ ollama --version
 Run from the example directory:
 
 ```bash
-cd src/supergrid_llm
+cd supergrid_llm
 
 # Fresh venv with a pinned Python (Flower 1.23 works well on 3.10–3.12)
 uv venv --python 3.11 .venv
@@ -81,7 +81,7 @@ The model name must match `model` in `[tool.flwr.app.config]` in
 ## 4. Start the grid (4 terminals)
 
 Activate the venv (`source .venv/bin/activate`) in each one, from
-`src/supergrid_llm`.
+`supergrid_llm/`.
 
 **Terminal 1 — SuperLink**
 
