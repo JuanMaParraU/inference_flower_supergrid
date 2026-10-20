@@ -7,8 +7,9 @@ name = "supergrid-llm"
 version = "1.0.0"
 description = "Minimal example: run an LLM across 2 Flower SuperGrid (SuperLink + SuperNode) nodes"
 license = "Apache-2.0"
+requires-python = ">=3.11"
 dependencies = [
-    "flwr>=1.13.0,<1.24.0",
+    "flwr>=1.40.0,<2.0.0",
     "ollama>=0.3.0",
 ]
 
@@ -25,10 +26,3 @@ clientapp = "supergrid_llm.client_app:app"
 [tool.flwr.app.config]
 model = "llama3.2:latest"
 prompt = "In one sentence, what is federated learning?"
-
-[tool.flwr.federations]
-default = "supergrid"
-
-[tool.flwr.federations.supergrid]
-address = "127.0.0.1:9093"
-insecure = true

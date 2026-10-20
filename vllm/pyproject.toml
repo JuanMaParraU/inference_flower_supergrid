@@ -7,8 +7,9 @@ name = "supergrid-vllm"
 version = "1.0.0"
 description = "Minimal example: run an LLM served by vLLM across Flower SuperGrid (SuperLink + SuperNode) nodes"
 license = "Apache-2.0"
+requires-python = ">=3.11"
 dependencies = [
-    "flwr>=1.13.0,<1.24.0",
+    "flwr>=1.40.0,<2.0.0",
     "openai>=1.0.0",
 ]
 
@@ -27,10 +28,3 @@ model = "Qwen/Qwen2.5-0.5B-Instruct"
 vllm-url = "http://127.0.0.1:8000/v1"
 max-tokens = 128
 prompt = "In one sentence, what is federated learning?"
-
-[tool.flwr.federations]
-default = "supergrid"
-
-[tool.flwr.federations.supergrid]
-address = "127.0.0.1:9093"
-insecure = true

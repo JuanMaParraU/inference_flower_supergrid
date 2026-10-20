@@ -10,14 +10,21 @@ Complete the [install and grid quick test](../README.md#install) first. Then, on
 every SuperNode machine:
 
 ```bash
-uv pip install vllm         # Linux (GPU/CPU wheels)
-uv pip install -e .         # install this app; run from this directory
+uv pip install -e .         # install this app into the Flower venv
+```
+
+The vLLM server is a separate program, so install it **outside** the Flower
+venv (it pins its own torch/CUDA versions). On Linux, in its own venv:
+
+```bash
+uv venv --python 3.12 ~/.venvs/vllm
+uv pip install --python ~/.venvs/vllm/bin/python vllm
 ```
 
 Then keep a vLLM server running on each SuperNode machine (separate terminal):
 
 ```bash
-vllm serve Qwen/Qwen2.5-0.5B-Instruct --port 8000
+~/.venvs/vllm/bin/vllm serve Qwen/Qwen2.5-0.5B-Instruct --port 8000
 ```
 
 > **macOS (Apple Silicon):** upstream vLLM has no macOS wheels, so don't build it
@@ -33,13 +40,13 @@ With the SuperLink and SuperNodes running (see the
 up on each SuperNode, from this directory:
 
 ```bash
-flwr run . supergrid --stream
+flwr run . selfhosted --stream
 ```
 
 Override config at runtime, e.g.:
 
 ```bash
-flwr run . supergrid --stream --run-config 'prompt="{YOUR PROMPT}" max-tokens=64'
+flwr run . selfhosted --stream --run-config 'prompt="{YOUR PROMPT}" max-tokens=64'
 ```
 
 ## Config

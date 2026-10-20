@@ -8,7 +8,7 @@ for the architecture, message flow, install and the grid quick test.
 |---|---|
 | [supergrid_llm/server_app.py](supergrid_llm/server_app.py) | `ServerApp`: fans the prompt out to every SuperNode and prints replies |
 | [supergrid_llm/client_app.py](supergrid_llm/client_app.py) | `ClientApp`: `@app.query()` handler that calls `ollama.generate` |
-| [pyproject.toml](pyproject.toml) | Dependencies (`flwr`, `ollama`), run config and the `supergrid` federation |
+| [pyproject.toml](pyproject.toml) | Dependencies (`flwr`, `ollama`), run config |
 
 ## Setup
 
@@ -31,7 +31,7 @@ uv pip install -e .
 With the SuperLink and SuperNodes running, from this directory:
 
 ```bash
-flwr run . supergrid --stream
+flwr run . selfhosted --stream
 ```
 
 Expected: the connected SuperNode IDs, then one generated response per node.
@@ -50,5 +50,5 @@ Set in `[tool.flwr.app.config]` in [pyproject.toml](pyproject.toml):
 Override at runtime:
 
 ```bash
-flwr run . supergrid --run-config 'prompt="{YOUR PROMPT}"'
+flwr run . selfhosted --run-config 'prompt="{YOUR PROMPT}"'
 ```
