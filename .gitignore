@@ -227,3 +227,6 @@ __marimo__/
 # Per-example virtual environments
 ollama_env/
 vllm_env/
+
+# Local tests for the vllm example (not published)
+vllm/tests/

@@ -1,7 +1,15 @@
 # vllm
 
-SuperGrid LLM inference where each SuperNode calls a
-local [vLLM](https://docs.vllm.ai) OpenAI-compatible server. See the
+A small **model arena / benchmark** on a Flower SuperGrid. Each SuperNode serves
+a model with a local [vLLM](https://docs.vllm.ai) OpenAI-compatible server. A
+`ServerApp` sends the same list of prompts to every node, each node answers them
+all and measures its own latency and tokens per second, and the server prints a
+table per prompt comparing the nodes, then a per-node summary.
+
+Use it to compare how different machines or models handle identical prompts, for
+example two GPUs running the same model, or two nodes running different models
+(set a node's model with `--node-config`, see [Run](#run)). Only the prompts and
+the replies cross the grid; the models stay on their nodes. See the
 [top-level README](../README.md) for the architecture and message flow.
 
 ## Setup
@@ -222,16 +230,6 @@ stops the run with a clear error.
   3 seconds: a shorter value can mark a node that has already answered as
   `NO REPLY`.
 - **Temperature is 0** so output is as repeatable as the backend allows.
-
-## Tests
-
-The tests use fakes, so they need no vLLM server or running grid. With
-`vllm_env` activated, from this directory:
-
-```bash
-uv pip install pytest
-pytest tests
-```
 
 ## Clean up
 
