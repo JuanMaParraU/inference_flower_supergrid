@@ -179,6 +179,7 @@ is involved. Use one terminal per command, each with the venv activated.
    ```
 
    Both should show `online`. You should get something like:
+```bash
 
 Using SuperLink: selfhosted (127.0.0.1:9000)
 📄 Listing all nodes...
@@ -189,7 +190,7 @@ Using SuperLink: selfhosted (127.0.0.1:9000)
 ├─────────────────────┼───────┼────────┼─────────┼──────────────────────┤
 │ 9622216904661572043 │ none  │ online │ 78s     │ 2026-10-20 16:45:22Z │
 └─────────────────────┴───────┴────────┴─────────┴──────────────────────┘
-
+```
 If a node doesn't show up, check the `--superlink` address, that port `9000`
 is reachable, and that SuperNodes on the same machine have unique `--port` values.
 The grid stays up for both examples below; you don't need to restart it to
