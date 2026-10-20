@@ -142,11 +142,45 @@ SuperNode, from this directory:
 flwr run . selfhosted --stream
 ```
 
+This is a small model arena. Each SuperNode receives the whole `prompts` list in
+a single message, runs the prompts one after another and returns the result of
+each. The ServerApp then compares the nodes in a table per prompt, followed by
+a per-node summary. Example output (the numbers are illustrative, not measurements):
+
+```text
+=== Prompt 2/3 [reasoning] ===
+A bat and a ball cost 1.10 pounds in total. ...
+
+node id              model                       latency (s)  tokens  tokens/s  response
+-------------------  --------------------------  -----------  ------  --------  ----------------------------------------------------------------------
+9051407112396313730  Qwen/Qwen2.5-0.5B-Instruct  2.10         118     56.2      Let the ball cost x. Then the bat costs x + 1.00, so 2x + 1.00 = 1.1...
+6656541696358605279  Qwen/Qwen2.5-0.5B-Instruct  3.40         121     35.6      The ball costs 5 pence. If the ball is 5p, the bat is 1.05, which to...
+2217405577318429003  -                           -            -       -         NO REPLY before the 120 s timeout
+
+Round trip 9.20 s for all 3 prompts; slowest node computed for 5.50 s (about 3.70 s Flower relay overhead)
+
+=== Per-node summary (successful replies only) ===
+node id               prompts  mean latency (s)  mean tokens/s
+9051407112396313730         3              1.82           58.4
+6656541696358605279         3              2.95           37.9
+```
+
+Rows are sorted by tokens/s, fastest first. A node that returned an error is
+marked `FAILED` with the reason, and a node that did not reply before
+`reply-timeout` is marked `NO REPLY`.
+
 Override config at runtime, e.g.:
 
 ```bash
-flwr run . selfhosted --stream --run-config 'prompt="{YOUR PROMPT}" max-tokens=64'
+flwr run . selfhosted --stream --run-config 'prompt="{YOUR PROMPT}" prompts="" max-tokens=64'
 ```
+
+### Choosing the model per node
+
+The model is resolved on each SuperNode in this order: the `model` key in its
+`--node-config` (e.g. `--node-config 'partition-id=0 model="Qwen/Qwen2.5-0.5B-Instruct"'`),
+then `model` in the run config, then the first model the local vLLM server
+lists. This lets nodes serving different models compete in the same arena.
 
 ## Config
 
@@ -154,10 +188,50 @@ Set in `[tool.flwr.app.config]` in [pyproject.toml](pyproject.toml):
 
 | Key | Default | Meaning |
 |---|---|---|
-| `model` | `Qwen/Qwen2.5-0.5B-Instruct` | Model name; must match what `vllm serve` loaded |
+| `model` | `Qwen/Qwen2.5-0.5B-Instruct` | Model name; must match what `vllm serve` loaded. Empty means use the server's first model. A node's `--node-config` overrides it |
 | `vllm-url` | `http://127.0.0.1:8000/v1` | Base URL of the node-local vLLM server |
 | `max-tokens` | `128` | Max tokens generated per reply |
-| `prompt` | `In one sentence, what is federated learning?` | Prompt sent to all nodes |
+| `reply-timeout` | `120` | Seconds to wait for each node's reply to the **whole batch**, so one dead node cannot stall the run. Raise it as you add prompts or `max-tokens` |
+| `prompts` | three prompts (factual, reasoning, translation) | JSON list of `{"id": "...", "prompt": "..."}` objects; `id` is optional and defaults to the 1-based position |
+| `prompt` | `In one sentence, what is federated learning?` | Fallback: used as a single prompt with id `single` when `prompts` is empty or missing |
+
+**Why is the list a JSON string?** Flower's run config only supports scalar
+values (bool, int, float, str), not TOML arrays or tables. So `prompts` is a
+JSON array stored in a TOML multi-line string, and the ServerApp parses it with
+`json.loads`. Bad JSON, an empty list or an item without a string `prompt`
+stops the run with a clear error.
+
+### Limits
+
+- **Broadcast only:** every prompt goes to every node. There is no routing or
+  load balancing yet (see [TODO.md](../TODO.md)).
+- **No streaming:** a reply arrives whole, so there is no time to first token.
+- **One batch per node:** a node runs its prompts sequentially so per-prompt
+  latencies stay comparable, and the grid is crossed once however many prompts
+  there are. The cost is that nothing is printed until every node has finished
+  (or `reply-timeout` passes), and a node that times out loses all of its
+  results. A single failing prompt is reported on its own row, not the whole node.
+- **Bounded by the slowest node:** the round trip lasts until the last node
+  finishes its batch.
+- **tokens/s is end to end:** it is completion tokens divided by the whole
+  request time, so it includes prompt processing and not only decoding. Compare
+  it between nodes, not against vLLM's own decode-speed figures.
+- **Flower polling adds latency:** the Grid collects replies by polling every
+  3 seconds (in flwr 1.40), so the round trip is rounded up to that step and
+  the "relay overhead" figure includes it. Keep `reply-timeout` well above
+  3 seconds: a shorter value can mark a node that has already answered as
+  `NO REPLY`.
+- **Temperature is 0** so output is as repeatable as the backend allows.
+
+## Tests
+
+The tests use fakes, so they need no vLLM server or running grid. With
+`vllm_env` activated, from this directory:
+
+```bash
+uv pip install pytest
+pytest tests
+```
 
 ## Clean up
 

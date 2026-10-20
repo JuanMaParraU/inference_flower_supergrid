@@ -27,4 +27,12 @@ clientapp = "supergrid_vllm.client_app:app"
 model = "Qwen/Qwen2.5-0.5B-Instruct"
 vllm-url = "http://127.0.0.1:8000/v1"
 max-tokens = 128
+reply-timeout = 120
+# Fallback used when `prompts` is empty or missing.
 prompt = "In one sentence, what is federated learning?"
+# The run config only holds scalars, so the prompt list is a JSON string.
+prompts = '''[
+  {"id": "factual", "prompt": "What is the capital of Australia, and why was it chosen over Sydney and Melbourne?"},
+  {"id": "reasoning", "prompt": "A bat and a ball cost 1.10 pounds in total. The bat costs 1.00 pound more than the ball. How much does the ball cost? Explain step by step."},
+  {"id": "translation", "prompt": "Translate into Spanish: 'The meeting has been moved to Thursday afternoon.'"}
+]'''
