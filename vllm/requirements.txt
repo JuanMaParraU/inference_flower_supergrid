@@ -1,0 +1,5 @@
+# Install into vllm_env. Flower app dependencies must stay in sync with
+# [project] dependencies in pyproject.toml.
+flwr>=1.40.0,<2.0.0   # flower-superlink, flower-supernode, flwr CLI
+openai>=1.0.0         # client for vLLM's OpenAI-compatible API
+vllm; sys_platform == "linux"   # model server; no macOS wheels (see README)

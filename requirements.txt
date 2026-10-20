@@ -1,6 +1,0 @@
-# Dependencies for running every example in this repo from one venv.
-# Keep in sync with the [project] dependencies in ollama/ and vllm/ pyproject.toml.
-# Not included: the model servers themselves (Ollama, vLLM); see each backend README.
-flwr>=1.40.0,<2.0.0   # flower-superlink, flower-supernode, flwr CLI
-ollama>=0.3.0         # ollama/ example client
-openai>=1.0.0         # vllm/ example client (OpenAI-compatible API)

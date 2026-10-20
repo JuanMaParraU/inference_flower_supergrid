@@ -222,3 +222,8 @@ __marimo__/
 # Flower local state and credentials
 .flwr/
 .credentials
+
+
+# Per-example virtual environments
+ollama_env/
+vllm_env/
